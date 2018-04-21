@@ -148,27 +148,27 @@ pub mod schema {
         }
         /// Users
         pub fn users(&self) -> ProofMapIndex<&T, PublicKey, User> {
-            ProofMapIndex::new("cryptoowls.users", &self.view)
+            ProofMapIndex::new("rusty_plane.users", &self.view)
         }
         /// Owls and their states (see data_layout::CryptoOwlState)
         pub fn owls_state(&self) -> ProofMapIndex<&T, Hash, CryptoOwlState> {
-            ProofMapIndex::new("cryptoowls.owls_state", &self.view)
+            ProofMapIndex::new("trusty_plane.owls_state", &self.view)
         }
         /// Owl orders
         pub fn orders(&self) -> ProofMapIndex<&T, Hash, Order> {
-            ProofMapIndex::new("cryptoowls.orders", &self.view)
+            ProofMapIndex::new("trusty_plane.orders", &self.view)
         }
         /// Helper table for linking user and his owls
         pub fn user_owls(&self, public_key: &PublicKey) -> ValueSetIndex<&T, Hash> {
-            ValueSetIndex::with_prefix("cryptoowls.user_owls", gen_prefix(public_key), &self.view)
+            ValueSetIndex::with_prefix("trusty_plane.user_owls", gen_prefix(public_key), &self.view)
         }
         /// Helper table for linking user and his orders
         pub fn user_orders(&self, public_key: &PublicKey) -> ListIndex<&T, Hash> {
-            ListIndex::with_prefix("cryptoowls.user_orders", gen_prefix(public_key), &self.view)
+            ListIndex::with_prefix("trusty_plane.user_orders", gen_prefix(public_key), &self.view)
         }
         /// Helper table for linking owl and her orders
         pub fn owl_orders(&self, owl_id: &Hash) -> ListIndex<&T, Hash> {
-            ListIndex::with_prefix("cryptoowls.owl_orders", gen_prefix(owl_id), &self.view)
+            ListIndex::with_prefix("trusty_plane.owl_orders", gen_prefix(owl_id), &self.view)
         }
 
         /// Method to get state hash. Depends on `users`, `owls_state` and `orders` tables.
@@ -184,27 +184,27 @@ pub mod schema {
     /// Mutable accessors for all our tables
     impl<'a> CryptoOwlsSchema<&'a mut Fork> {
         pub fn users_mut(&mut self) -> ProofMapIndex<&mut Fork, PublicKey, User> {
-            ProofMapIndex::new("cryptoowls.users", self.view)
+            ProofMapIndex::new("trusty_plane.users", self.view)
         }
 
         pub fn owls_state_mut(&mut self) -> ProofMapIndex<&mut Fork, Hash, CryptoOwlState> {
-            ProofMapIndex::new("cryptoowls.owls_state", self.view)
+            ProofMapIndex::new("trusty_plane.owls_state", self.view)
         }
 
         pub fn orders_mut(&mut self) -> ProofMapIndex<&mut Fork, Hash, Order> {
-            ProofMapIndex::new("cryptoowls.orders", self.view)
+            ProofMapIndex::new("trusty_plane.orders", self.view)
         }
 
         pub fn user_owls_mut(&mut self, public_key: &PublicKey) -> ValueSetIndex<&mut Fork, Hash> {
-            ValueSetIndex::with_prefix("cryptoowls.user_owls", gen_prefix(public_key), self.view)
+            ValueSetIndex::with_prefix("trusty_plane.user_owls", gen_prefix(public_key), self.view)
         }
 
         pub fn user_orders_mut(&mut self, public_key: &PublicKey) -> ListIndex<&mut Fork, Hash> {
-            ListIndex::with_prefix("cryptoowls.user_orders", gen_prefix(public_key), self.view)
+            ListIndex::with_prefix("trusty_plane.user_orders", gen_prefix(public_key), self.view)
         }
 
         pub fn owl_orders_mut(&mut self, owl_id: &Hash) -> ListIndex<&mut Fork, Hash> {
-            ListIndex::with_prefix("cryptoowls.owl_orders", gen_prefix(owl_id), self.view)
+            ListIndex::with_prefix("trusty_plane.owl_orders", gen_prefix(owl_id), self.view)
         }
     }
 }
