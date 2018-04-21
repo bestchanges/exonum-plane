@@ -285,6 +285,7 @@ pub mod transactions {
             };
 
             let key = self.public_key();
+            println!("Key {:?} ", key);
             let mut schema = schema::CryptoOwlsSchema::new(fork);
 
             // Ignore if the user with the same public identifier is already exists
