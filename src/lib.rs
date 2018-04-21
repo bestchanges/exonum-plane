@@ -102,6 +102,28 @@ mod data_layout {
             price: u64,
         }
     }
+
+
+    encoding_struct! {
+        /// Order to buy an owl
+        struct Part {
+            producer: &PublicKey,
+            kind: &str,
+            serial_number: &str,
+        }
+    }
+
+
+    encoding_struct! {
+        /// Order to buy an owl
+        struct PartState {
+            part: Part,
+            owner: &PublicKey,
+            parts: &[Hash]
+        }
+    }
+
+
 }
 
 /// Database schema

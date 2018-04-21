@@ -1,7 +1,7 @@
 [package]
-name = "exonum-cryptoowls"
+name = "trusty-plane"
 version = "0.0.0"
-authors = ["The Exonum Team <exonum@bitfury.com>"]
+authors = ["Rusty Plane Hascker <noname@hackatone.com>"]
 homepage = "https://exonum.com"
 repository = "https://github.com/exonum/exonum-cryptoowls"
 readme = "README.md"
