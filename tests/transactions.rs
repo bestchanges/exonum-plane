@@ -15,7 +15,7 @@
 extern crate exonum;
 extern crate exonum_time;
 
-extern crate exonum_cryptoowls as cryptoowls;
+extern crate trusty_plane as cryptoowls;
 #[macro_use]
 extern crate exonum_testkit;
 extern crate rand;

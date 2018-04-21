@@ -113,7 +113,6 @@ mod data_layout {
         }
     }
 
-
     encoding_struct! {
         /// Order to buy an owl
         struct PartState {
@@ -122,7 +121,6 @@ mod data_layout {
             parts: &[Hash],
         }
     }
-
 
 }
 

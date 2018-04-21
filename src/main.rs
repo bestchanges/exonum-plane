@@ -16,7 +16,7 @@ extern crate exonum;
 extern crate exonum_configuration;
 extern crate exonum_time;
 
-extern crate exonum_cryptoowls as cryptoowls;
+extern crate trusty_plane as cryptoowls;
 
 use exonum::helpers;
 use exonum::helpers::fabric::NodeBuilder;
