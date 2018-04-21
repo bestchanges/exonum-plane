@@ -86,6 +86,8 @@ mod data_layout {
             balance: u64,
             /// Time of the last issue of funds
             last_fillup: SystemTime,
+            /// Role
+            role: &str,
         }
     }
 
@@ -239,6 +241,7 @@ pub mod transactions {
                 public_key: &PublicKey,
                 /// Name
                 name: &str,
+                role: &str,
             }
 
             /// Transaction to area an owl. A new random owl created if mother and father
@@ -310,7 +313,7 @@ pub mod transactions {
 
             // Ignore if the user with the same public identifier is already exists
             if schema.users().get(key).is_none() {
-                let user = User::new(&key, self.name(), ISSUE_AMMOUNT, ts);
+                let user = User::new(&key, self.name(), ISSUE_AMMOUNT, ts, self.role());
                 schema.users_mut().put(key, user);
 
                 // New user get 2 random owls
@@ -391,7 +394,7 @@ pub mod transactions {
                 let owls_to_update = vec![son, mother, father];
                 schema.refresh_owls(&key, owls_to_update, ts);
 
-                let user = User::new(&key, user.name(), user.balance() - BREEDING_PRICE, ts);
+                let user = User::new(&key, user.name(), user.balance() - BREEDING_PRICE, ts, user.role());
                 schema.users_mut().put(&key, user);
             }
 
@@ -562,7 +565,7 @@ pub mod transactions {
         ) {
             if let Some(user) = self.users().get(public_key) {
                 let last_fillup = last_fillup.unwrap_or(user.last_fillup());
-                let new_user = User::new(public_key, user.name(), balance, last_fillup);
+                let new_user = User::new(public_key, user.name(), balance, last_fillup, user.role());
                 self.users_mut().put(public_key, new_user)
             }
         }
