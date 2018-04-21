@@ -119,7 +119,7 @@ mod data_layout {
         struct PartState {
             part: Part,
             owner: &PublicKey,
-            parts: &[Hash]
+            parts: &[Hash],
         }
     }
 
