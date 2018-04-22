@@ -105,7 +105,6 @@ mod data_layout {
         }
     }
 
-
     encoding_struct! {
         /// Order to buy an owl
         struct Part {
@@ -120,7 +119,7 @@ mod data_layout {
         struct PartState {
             part: Part,
             owner: &PublicKey,
-            parts: &[Hash],
+//            parts: &[Hash],
         }
     }
 
@@ -132,7 +131,7 @@ pub mod schema {
     use exonum::blockchain::gen_prefix;
     use exonum::crypto::{Hash, PublicKey};
 
-    use data_layout::{CryptoOwlState, Order, User};
+    use data_layout::{CryptoOwlState, Order, User, PartState};
 
     pub struct CryptoOwlsSchema<T> {
         view: T,
@@ -148,11 +147,14 @@ pub mod schema {
         }
         /// Users
         pub fn users(&self) -> ProofMapIndex<&T, PublicKey, User> {
-            ProofMapIndex::new("rusty_plane.users", &self.view)
+            ProofMapIndex::new("trusty_plane.users", &self.view)
         }
         /// Owls and their states (see data_layout::CryptoOwlState)
         pub fn owls_state(&self) -> ProofMapIndex<&T, Hash, CryptoOwlState> {
             ProofMapIndex::new("trusty_plane.owls_state", &self.view)
+        }
+        pub fn part_state(&self) -> ProofMapIndex<&T, Hash, PartState> {
+            ProofMapIndex::new("trusty_plane.part_state", &self.view)
         }
         /// Owl orders
         pub fn orders(&self) -> ProofMapIndex<&T, Hash, Order> {
@@ -161,6 +163,9 @@ pub mod schema {
         /// Helper table for linking user and his owls
         pub fn user_owls(&self, public_key: &PublicKey) -> ValueSetIndex<&T, Hash> {
             ValueSetIndex::with_prefix("trusty_plane.user_owls", gen_prefix(public_key), &self.view)
+        }
+        pub fn user_part(&self, public_key: &PublicKey) -> ValueSetIndex<&T, Hash> {
+            ValueSetIndex::with_prefix("trusty_plane.user_part", gen_prefix(public_key), &self.view)
         }
         /// Helper table for linking user and his orders
         pub fn user_orders(&self, public_key: &PublicKey) -> ListIndex<&T, Hash> {
@@ -191,12 +196,20 @@ pub mod schema {
             ProofMapIndex::new("trusty_plane.owls_state", self.view)
         }
 
+        pub fn part_state_mut(&mut self) -> ProofMapIndex<&mut Fork, Hash, PartState> {
+            ProofMapIndex::new("trusty_plane.part_state", self.view)
+        }
+
         pub fn orders_mut(&mut self) -> ProofMapIndex<&mut Fork, Hash, Order> {
             ProofMapIndex::new("trusty_plane.orders", self.view)
         }
 
         pub fn user_owls_mut(&mut self, public_key: &PublicKey) -> ValueSetIndex<&mut Fork, Hash> {
             ValueSetIndex::with_prefix("trusty_plane.user_owls", gen_prefix(public_key), self.view)
+        }
+
+        pub fn user_part_mut(&mut self, public_key: &PublicKey) -> ValueSetIndex<&mut Fork, Hash> {
+            ValueSetIndex::with_prefix("trusty_plane.user_part", gen_prefix(public_key), self.view)
         }
 
         pub fn user_orders_mut(&mut self, public_key: &PublicKey) -> ListIndex<&mut Fork, Hash> {
@@ -225,7 +238,7 @@ pub mod transactions {
     use std::time::SystemTime;
     use std::io::Cursor;
 
-    use data_layout::{CryptoOwl, CryptoOwlState, Order, User};
+    use data_layout::{CryptoOwl, CryptoOwlState, Part, PartState, Order, User};
     use schema;
     use schema::CryptoOwlsSchema;
 
@@ -247,14 +260,10 @@ pub mod transactions {
             /// Transaction to area an owl. A new random owl created if mother and father
             /// are not defined (have zero identifiers).
             struct MakeOwl {
-                /// Public user identifier
                 public_key: &PublicKey,
-                /// Owl name
-                name: &str,
-                /// Father identifier
-                father_id: &Hash,
-                /// Mother identifier
-                mother_id: &Hash,
+                kind: &str,
+                role: &str,
+                serial_number: &str,
                 /// Timestamp. Is required to breed owls with the same identifiers.
                 seed: SystemTime,
             }
@@ -293,7 +302,11 @@ pub mod transactions {
 
     impl Transaction for CreateUser {
         fn verify(&self) -> bool {
-            self.verify_signature(self.public_key())
+            let public_key = self.public_key();
+            println!("VS0 pk: {:?}", public_key);
+            let sign = self.verify_signature(public_key);
+            println!("sign {:?}", sign);
+            sign
         }
 
         fn execute(&self, fork: &mut Fork) -> ExecutionResult {
@@ -308,7 +321,7 @@ pub mod transactions {
             };
 
             let key = self.public_key();
-            println!("Key {:?} ", key);
+            println!("PK: {:?}", key);
             let mut schema = schema::CryptoOwlsSchema::new(fork);
 
             // Ignore if the user with the same public identifier is already exists
@@ -337,66 +350,44 @@ pub mod transactions {
 
     impl Transaction for MakeOwl {
         fn verify(&self) -> bool {
-            self.verify_signature(self.public_key())
+            let public_key = self.public_key();
+            println!("VS0 pk: {:?}", public_key);
+            let sign = self.verify_signature(public_key);
+            println!("sign {:?}", sign);
+            sign
         }
 
         fn execute(&self, fork: &mut Fork) -> ExecutionResult {
+            println!("MO0");
             let ts = {
                 let time_schema = TimeSchema::new(&fork);
                 time_schema.time().get().unwrap()
             };
+            println!("MO1");
 
             let state_hash = {
                 let info_schema = Schema::new(&fork);
                 info_schema.state_hash_aggregator().root_hash()
             };
+            println!("MO2");
 
             let mut schema = schema::CryptoOwlsSchema::new(fork);
-
-            // Find mother and father
-            // If someone is missed will get None response
-            let parents = [self.mother_id(), self.father_id()]
-                .iter()
-                .map(|&i| schema.owls_state().get(&i))
-                .collect::<Option<Vec<CryptoOwlState>>>();
+            println!("MO3");
 
             let user = schema.users().get(self.public_key()).unwrap();
-            let key = user.public_key();
+            println!("user {:?} ", user);
+            let user_public_key = user.public_key();
+            println!("Part {:?} ", user_public_key);
 
             // Ignore transaction if mother of father is not found
-            if let Some(parents) = parents {
-                // Check if user is owl owner
-                if parents.iter().any(|ref p| p.owner() != key) {
-                    return Err(ErrorKind::AccessViolation.into());
-                }
-
-                let (mother, father) = (parents[0].owl(), parents[1].owl());
-                // Can not use the same owl as mother and father at the same time
-                if mother == father {
-                    return Err(ErrorKind::SelfBreeding.into());
-                }
-
-                // User has enough funds for breeding
-                if user.balance() < BREEDING_PRICE {
-                    return Err(ErrorKind::InsufficientFunds.into());
-                }
-
-                // Check last breeding time for each owl
-                if parents.iter().any(|ref p| {
-                    ts.duration_since(p.last_breeding()).unwrap().as_secs() < BREEDING_TIMEOUT
-                }) {
-                    return Err(ErrorKind::EarlyBreeding.into());
-                }
-
-                // All conditions are fulfilled, start breeding
-                let son =
-                    schema.make_uniq_owl((father.dna(), mother.dna()), self.name(), &state_hash);
-                let owls_to_update = vec![son, mother, father];
-                schema.refresh_owls(&key, owls_to_update, ts);
-
-                let user = User::new(&key, user.name(), user.balance() - BREEDING_PRICE, ts, user.role());
-                schema.users_mut().put(&key, user);
-            }
+            // TODO: add certification check
+            // TODO: add user role check
+            let part = Part::new(&user_public_key, self.kind(), self.serial_number());
+            println!("Part {:?} ", self.kind());
+            schema.user_part_mut(user_public_key).insert(part.hash());
+            println!("MO4");
+            schema.part_state_mut().put(&part.hash(), PartState::new(part, user_public_key));
+            println!("MO5");
 
             Ok(())
         }
