@@ -31,9 +31,9 @@ extern crate router;
 extern crate serde;
 
 /// Unique service identifier
-pub const CRYPTOOWLS_SERVICE_ID: u16 = 521;
+pub const TransferableEntityS_SERVICE_ID: u16 = 521;
 /// Unique service name which will be used in API and configuration
-pub const CRYPTOOWLS_SERVICE_NAME: &str = "cryptoowls";
+pub const TransferableEntityS_SERVICE_NAME: &str = "TransferableEntitys";
 
 /// Sum to be issued each time
 pub const ISSUE_AMMOUNT: u64 = 100;
@@ -54,8 +54,8 @@ mod data_layout {
     use exonum::crypto::{Hash, PublicKey};
 
     encoding_struct! {
-        /// CryptoOwl. Unique identifier of the owl is a hash of this data structure.
-        struct CryptoOwl {
+        /// TransferableEntity. Unique identifier of the owl is a hash of this data structure.
+        struct TransferableEntity {
             /// Name (should be unique)
             name: &str,
             /// DNA
@@ -65,9 +65,9 @@ mod data_layout {
 
     encoding_struct! {
         /// Current owl state
-        struct CryptoOwlState {
+        struct TransferableEntityState {
             /// Owl
-            owl: CryptoOwl,
+            owl: TransferableEntity,
             /// Owner
             owner: &PublicKey,
             /// Time of the last breeding
@@ -131,26 +131,26 @@ pub mod schema {
     use exonum::blockchain::gen_prefix;
     use exonum::crypto::{Hash, PublicKey};
 
-    use data_layout::{CryptoOwlState, Order, User, PartState};
+    use data_layout::{TransferableEntityState, Order, User, PartState};
 
-    pub struct CryptoOwlsSchema<T> {
+    pub struct TransferableEntitysSchema<T> {
         view: T,
     }
 
     /// Read-only tables
-    impl<T> CryptoOwlsSchema<T>
+    impl<T> TransferableEntitysSchema<T>
     where
         T: AsRef<Snapshot>,
     {
         pub fn new(view: T) -> Self {
-            CryptoOwlsSchema { view }
+            TransferableEntitysSchema { view }
         }
         /// Users
         pub fn users(&self) -> ProofMapIndex<&T, PublicKey, User> {
             ProofMapIndex::new("trusty_plane.users", &self.view)
         }
-        /// Owls and their states (see data_layout::CryptoOwlState)
-        pub fn owls_state(&self) -> ProofMapIndex<&T, Hash, CryptoOwlState> {
+        /// Owls and their states (see data_layout::TransferableEntityState)
+        pub fn owls_state(&self) -> ProofMapIndex<&T, Hash, TransferableEntityState> {
             ProofMapIndex::new("trusty_plane.owls_state", &self.view)
         }
         pub fn part_state(&self) -> ProofMapIndex<&T, Hash, PartState> {
@@ -187,12 +187,12 @@ pub mod schema {
     }
 
     /// Mutable accessors for all our tables
-    impl<'a> CryptoOwlsSchema<&'a mut Fork> {
+    impl<'a> TransferableEntitysSchema<&'a mut Fork> {
         pub fn users_mut(&mut self) -> ProofMapIndex<&mut Fork, PublicKey, User> {
             ProofMapIndex::new("trusty_plane.users", self.view)
         }
 
-        pub fn owls_state_mut(&mut self) -> ProofMapIndex<&mut Fork, Hash, CryptoOwlState> {
+        pub fn owls_state_mut(&mut self) -> ProofMapIndex<&mut Fork, Hash, TransferableEntityState> {
             ProofMapIndex::new("trusty_plane.owls_state", self.view)
         }
 
@@ -238,15 +238,15 @@ pub mod transactions {
     use std::time::SystemTime;
     use std::io::Cursor;
 
-    use data_layout::{CryptoOwl, CryptoOwlState, Part, PartState, Order, User};
+    use data_layout::{TransferableEntity, TransferableEntityState, Part, PartState, Order, User};
     use schema;
-    use schema::CryptoOwlsSchema;
+    use schema::TransferableEntitysSchema;
 
-    use {BREEDING_PRICE, BREEDING_TIMEOUT, CRYPTOOWLS_SERVICE_ID, ISSUE_AMMOUNT, ISSUE_TIMEOUT};
+    use {BREEDING_PRICE, BREEDING_TIMEOUT, TransferableEntityS_SERVICE_ID, ISSUE_AMMOUNT, ISSUE_TIMEOUT};
 
     transactions! {
         pub Transactions {
-            const SERVICE_ID = CRYPTOOWLS_SERVICE_ID;
+            const SERVICE_ID = TransferableEntityS_SERVICE_ID;
 
             /// Transaction to create a new user
             struct CreateUser {
@@ -322,27 +322,13 @@ pub mod transactions {
 
             let key = self.public_key();
             println!("PK: {:?}", key);
-            let mut schema = schema::CryptoOwlsSchema::new(fork);
+            let mut schema = schema::TransferableEntitysSchema::new(fork);
 
             // Ignore if the user with the same public identifier is already exists
             if schema.users().get(key).is_none() {
                 let user = User::new(&key, self.name(), ISSUE_AMMOUNT, ts, self.role());
                 schema.users_mut().put(key, user);
 
-                // New user get 2 random owls
-                let starter_pack = vec![
-                    schema.make_uniq_owl(
-                        (1u32, 0u32),
-                        &format!("{}'s Adam", self.name()),
-                        &state_hash,
-                    ),
-                    schema.make_uniq_owl(
-                        (1u32, 100042u32),
-                        &format!("{}'s Eve", self.name()),
-                        &key.hash(),
-                    ),
-                ];
-                schema.refresh_owls(key, starter_pack, ts);
             }
             Ok(())
         }
@@ -371,7 +357,7 @@ pub mod transactions {
             };
             println!("MO2");
 
-            let mut schema = schema::CryptoOwlsSchema::new(fork);
+            let mut schema = schema::TransferableEntitysSchema::new(fork);
             println!("MO3");
 
             let user = schema.users().get(self.public_key()).unwrap();
@@ -404,7 +390,7 @@ pub mod transactions {
                 time_schema.time().get().unwrap()
             };
 
-            let mut schema = schema::CryptoOwlsSchema::new(fork);
+            let mut schema = schema::TransferableEntitysSchema::new(fork);
             let key = self.public_key();
             let user = schema.users().get(key).unwrap();
 
@@ -424,7 +410,7 @@ pub mod transactions {
         }
 
         fn execute(&self, fork: &mut Fork) -> ExecutionResult {
-            let mut schema = schema::CryptoOwlsSchema::new(fork);
+            let mut schema = schema::TransferableEntitysSchema::new(fork);
             let key = self.public_key();
             let user = schema.users().get(&key).unwrap();
 
@@ -450,7 +436,7 @@ pub mod transactions {
         }
 
         fn execute(&self, fork: &mut Fork) -> ExecutionResult {
-            let mut schema = schema::CryptoOwlsSchema::new(fork);
+            let mut schema = schema::TransferableEntitysSchema::new(fork);
             if let Some(accepted_order) = schema.accept_order(self.public_key(), self.order_id()) {
                 let owl_state = schema.owls_state().get(accepted_order.owl_id()).unwrap();
 
@@ -469,12 +455,12 @@ pub mod transactions {
     }
 
     /// Read-only tables
-    impl<T> CryptoOwlsSchema<T>
+    impl<T> TransferableEntitysSchema<T>
     where
         T: AsRef<Snapshot>,
     {
         // Method to generate new unique owl
-        pub fn make_uniq_owl(&self, genes: (u32, u32), name: &str, hash_seed: &Hash) -> CryptoOwl {
+        pub fn make_uniq_owl(&self, genes: (u32, u32), name: &str, hash_seed: &Hash) -> TransferableEntity {
             // Hash is a byte array [u8; 32]. To seed random number generator an array
             // of 32-bit numbers &[u32] is required. So we use `std::io::Cursor` and build
             // a new u32 number of each 4 bytes.
@@ -523,7 +509,7 @@ pub mod transactions {
                 // Create a new owls with given DNA.
                 // Break out of the loop if the resulted owl is unique.
                 // Otherwise, try again.
-                let newborn = CryptoOwl::new(name, son_dna);
+                let newborn = TransferableEntity::new(name, son_dna);
                 if self.owls_state().get(&newborn.hash()).is_none() {
                     break newborn;
                 }
@@ -532,18 +518,18 @@ pub mod transactions {
     }
 
     /// Mutable accessors for all our tables
-    impl<'a> CryptoOwlsSchema<&'a mut Fork> {
+    impl<'a> TransferableEntitysSchema<&'a mut Fork> {
         /// Helper method to update owl state after breed or create
         pub fn refresh_owls(
             &mut self,
             owner_key: &PublicKey,
-            owls: Vec<CryptoOwl>,
+            owls: Vec<TransferableEntity>,
             ts: SystemTime,
         ) {
             for owl in owls {
                 self.user_owls_mut(owner_key).insert(owl.hash());
                 self.owls_state_mut()
-                    .put(&owl.hash(), CryptoOwlState::new(owl, owner_key, ts));
+                    .put(&owl.hash(), TransferableEntityState::new(owl, owner_key, ts));
             }
         }
 
@@ -673,16 +659,16 @@ mod api {
     use exonum::blockchain::{Blockchain, Transaction};
 
     use schema;
-    use data_layout::{CryptoOwlState, Order, User};
+    use data_layout::{TransferableEntityState, Order, User};
     use transactions::Transactions;
 
     #[derive(Clone)]
-    pub struct CryptoOwlsApi {
+    pub struct TransferableEntitysApi {
         pub channel: ApiSender,
         pub blockchain: Blockchain,
     }
 
-    impl Api for CryptoOwlsApi {
+    impl Api for TransferableEntitysApi {
         fn wire(&self, router: &mut Router) {
             let self_ = self.clone();
             let get_user = move |req: &mut Request| {
@@ -716,7 +702,7 @@ mod api {
                 if let Some(owl) = self_.get_owl(&owl_hash) {
                     self_.ok_response(&json!(owl))
                 } else {
-                    self_.not_found_response(&json!("Owl not found"))
+                    self_.not_found_response(&json!("Entity not found"))
                 }
             };
 
@@ -732,7 +718,7 @@ mod api {
                 if let Some(orders) = self_.get_owls_orders(&owl_hash) {
                     self_.ok_response(&json!(orders))
                 } else {
-                    self_.not_found_response(&json!("Owl not found"))
+                    self_.not_found_response(&json!("Entity not found"))
                 }
             };
 
@@ -784,50 +770,50 @@ mod api {
         }
     }
 
-    impl CryptoOwlsApi {
+    impl TransferableEntitysApi {
         /// User profile
         fn get_user(&self, public_key: &PublicKey) -> Option<User> {
             let snapshot = self.blockchain.snapshot();
-            let schema = schema::CryptoOwlsSchema::new(snapshot);
+            let schema = schema::TransferableEntitysSchema::new(snapshot);
             schema.users().get(public_key)
         }
 
         /// All users
         fn get_users(&self) -> Vec<User> {
             let snapshot = self.blockchain.snapshot();
-            let schema = schema::CryptoOwlsSchema::new(snapshot);
+            let schema = schema::TransferableEntitysSchema::new(snapshot);
             let idx = schema.users();
             let users: Vec<User> = idx.values().collect();
             users
         }
 
         /// Owl profile
-        fn get_owl(&self, owl_id: &Hash) -> Option<CryptoOwlState> {
+        fn get_owl(&self, owl_id: &Hash) -> Option<TransferableEntityState> {
             let snapshot = self.blockchain.snapshot();
-            let schema = schema::CryptoOwlsSchema::new(snapshot);
+            let schema = schema::TransferableEntitysSchema::new(snapshot);
             schema.owls_state().get(&owl_id)
         }
 
         /// All owls
-        fn get_owls(&self) -> Vec<CryptoOwlState> {
+        fn get_owls(&self) -> Vec<TransferableEntityState> {
             let snapshot = self.blockchain.snapshot();
-            let schema = schema::CryptoOwlsSchema::new(snapshot);
+            let schema = schema::TransferableEntitysSchema::new(snapshot);
             let idx = schema.owls_state();
-            let owls: Vec<CryptoOwlState> = idx.values().collect();
+            let owls: Vec<TransferableEntityState> = idx.values().collect();
             owls
         }
 
         /// User owls list
-        fn get_user_owls(&self, public_key: &PublicKey) -> Option<Vec<CryptoOwlState>> {
+        fn get_user_owls(&self, public_key: &PublicKey) -> Option<Vec<TransferableEntityState>> {
             let snapshot = self.blockchain.snapshot();
-            let schema = schema::CryptoOwlsSchema::new(snapshot);
+            let schema = schema::TransferableEntitysSchema::new(snapshot);
 
             schema.users().get(&public_key).and({
                 let idx = schema.user_owls(&public_key);
                 // Attention, iterator type is ValueSetIndexIter<'_, Hash> !!!
                 let owls = idx.iter()
                     .map(|h| schema.owls_state().get(&h.1))
-                    .collect::<Option<Vec<CryptoOwlState>>>()
+                    .collect::<Option<Vec<TransferableEntityState>>>()
                     .or(Some(vec![]));
                 owls
             })
@@ -836,7 +822,7 @@ mod api {
         /// Owl orders
         fn get_owls_orders(&self, owl_id: &Hash) -> Option<Vec<Order>> {
             let snapshot = self.blockchain.snapshot();
-            let schema = schema::CryptoOwlsSchema::new(snapshot);
+            let schema = schema::TransferableEntitysSchema::new(snapshot);
 
             schema.owls_state().get(owl_id).and({
                 let idx = schema.owl_orders(owl_id);
@@ -851,7 +837,7 @@ mod api {
         /// Orders made by user
         fn get_users_orders(&self, users_key: &PublicKey) -> Option<Vec<Order>> {
             let snapshot = self.blockchain.snapshot();
-            let schema = schema::CryptoOwlsSchema::new(snapshot);
+            let schema = schema::TransferableEntitysSchema::new(snapshot);
 
             schema.users().get(users_key).and({
                 let idx = schema.user_orders(users_key);
@@ -885,35 +871,35 @@ pub mod service {
     use exonum::helpers::fabric::{Context, ServiceFactory};
     use exonum::messages::RawTransaction;
 
-    use api::CryptoOwlsApi;
-    use schema::CryptoOwlsSchema;
+    use api::TransferableEntitysApi;
+    use schema::TransferableEntitysSchema;
     use transactions::Transactions;
 
-    use CRYPTOOWLS_SERVICE_ID;
+    use TransferableEntityS_SERVICE_ID;
 
-    pub struct CryptoOwlsService;
+    pub struct TransferableEntitysService;
 
-    impl CryptoOwlsService {
+    impl TransferableEntitysService {
         pub fn new() -> Self {
-            CryptoOwlsService {}
+            TransferableEntitysService {}
         }
     }
 
-    pub struct CryptoOwlsServiceFactory;
+    pub struct TransferableEntitysServiceFactory;
 
-    impl ServiceFactory for CryptoOwlsServiceFactory {
+    impl ServiceFactory for TransferableEntitysServiceFactory {
         fn make_service(&mut self, _: &Context) -> Box<Service> {
-            Box::new(CryptoOwlsService::new())
+            Box::new(TransferableEntitysService::new())
         }
     }
 
-    impl Service for CryptoOwlsService {
+    impl Service for TransferableEntitysService {
         fn service_name(&self) -> &'static str {
-            "cryptoowls"
+            "TransferableEntitys"
         }
 
         fn service_id(&self) -> u16 {
-            CRYPTOOWLS_SERVICE_ID
+            TransferableEntityS_SERVICE_ID
         }
 
         // Method to deserialize transacitons
@@ -924,14 +910,14 @@ pub mod service {
 
         // Tables hashes to be included into blockchain state hash
         fn state_hash(&self, snapshot: &Snapshot) -> Vec<Hash> {
-            let schema = CryptoOwlsSchema::new(snapshot);
+            let schema = TransferableEntitysSchema::new(snapshot);
             schema.state_hash()
         }
 
         // Handling requests to a node
         fn public_api_handler(&self, ctx: &ApiContext) -> Option<Box<Handler>> {
             let mut router = Router::new();
-            let api = CryptoOwlsApi {
+            let api = TransferableEntitysApi {
                 channel: ctx.node_channel().clone(),
                 blockchain: ctx.blockchain().clone(),
             };
